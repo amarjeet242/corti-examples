@@ -96,7 +96,7 @@ async function getScopedStreamToken() {
 const app = express();
 
 // Serve the front-end files (index.html, dist/client.js) from this directory.
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, "..")));
 app.use(express.json());
 
 // POST /api/start-session
