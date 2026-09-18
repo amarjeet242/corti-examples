@@ -119,7 +119,11 @@ export async function startSession(
   } as Corti.StreamConfig;
 
   // -- 3. Connect to the Corti streaming WebSocket -------------------------
-  const streamSocket = await client.stream.connect({ id: interactionId, configuration });
+  const streamSocket = await client.stream.connect({
+  id: interactionId,
+  configuration,
+  awaitConfiguration: false,
+});
 
   // -- 4. Acquire audio depending on mode ----------------------------------
   //    "single"  → just the local microphone
