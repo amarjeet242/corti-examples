@@ -1,203 +1,134 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AmbientScribe Consultation</title>
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="A local Corti ambient consultation prototype." />
+    <title>Ambient Scribe</title>
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html" aria-label="Ambient Scribe home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>Ambient</strong><small>Scribe</small></span>
+        </a>
 
-<body>
-  <header>
-    <strong>AmbientScribe</strong>
+        <label class="search-box" aria-label="Search is not available in this prototype">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" readonly placeholder="Search consultations, patients or notes…" />
+          <kbd>⌘ K</kbd>
+        </label>
 
-    <nav>
-      <a href="./index.html">Consultation</a>
-      |
-      <a href="./facts.html">Facts</a>
-      |
-      <a href="./document.html">Document</a>
-    </nav>
-  </header>
+        <div class="header-status" id="header-status" aria-live="polite">
+          <span class="status-dot" id="header-status-dot"></span>
+          <span id="header-status-text">Ready</span>
+          <strong id="header-timer">00:00:00</strong>
+        </div>
 
-  <hr />
+        <button class="profile" type="button" aria-label="Clinician profile; not available in this prototype">
+          <span class="avatar clinician">AB</span>
+          <span><strong>Dr. Bansal</strong><small>Psychiatry</small></span>
+          <span aria-hidden="true">⌄</span>
+        </button>
+      </header>
 
-  <main>
-    <h1>Consultation</h1>
+      <aside class="sidebar" aria-label="Primary navigation">
+        <nav>
+          <a class="nav-item active" href="./index.html" aria-current="page"><span>⌂</span><b>Consultation</b><small>Live scribe</small></a>
+          <button class="nav-item" type="button" aria-label="Patients; planned"><span>♙</span><b>Patients</b><small>Your caseload</small></button>
+          <button class="nav-item" type="button" aria-label="Documents; planned"><span>▤</span><b>Documents</b><small>Past notes</small></button>
+          <button class="nav-item" type="button" aria-label="Templates; planned"><span>▣</span><b>Templates</b><small>To be planned</small></button>
+          <button class="nav-item" type="button" aria-label="Settings; planned"><span>⚙</span><b>Settings</b><small>Preferences</small></button>
+        </nav>
+        <section class="sidebar-message" aria-label="Ambient Scribe status">
+          <div class="orbital-art" aria-hidden="true"><i></i><i></i><i></i></div>
+          <h2>Less paperwork.<br />More presence.</h2>
+          <span class="progress-line"><i></i></span>
+        </section>
+      </aside>
 
-    <p>
-      Prototype only. Do not enter genuine patient-identifiable information.
-    </p>
+      <main class="workspace">
+        <section class="transcript-card" aria-labelledby="transcription-title">
+          <header class="card-toolbar">
+            <div class="segmented-control" aria-label="Consultation view">
+              <button class="selected" type="button" aria-pressed="true"><span aria-hidden="true">⌁</span> Live transcription</button>
+              <button type="button" aria-pressed="false" id="facts-summary-button"><span aria-hidden="true">▤</span> Facts <b id="facts-count">0</b></button>
+            </div>
+            <div class="toolbar-actions">
+              <button class="icon-button" type="button" aria-label="English language selected">EN⌄</button>
+              <button class="icon-button" type="button" aria-label="Settings are not available in this prototype">⚙</button>
+            </div>
+          </header>
 
-    <fieldset>
-      <legend>Consultation controls</legend>
+          <div class="transcript-heading">
+            <div>
+              <p class="eyebrow">Consultation</p>
+              <h1 id="transcription-title">Live transcription</h1>
+            </div>
+            <p id="status-message" class="quiet-status" role="status">Ready to start a private consultation.</p>
+          </div>
 
-      <button id="start-consultation">
-        Start consultation
-      </button>
+          <div id="transcript-output" class="transcript-output" aria-live="polite" aria-label="Live transcript">
+            <div class="empty-state" id="transcript-empty">
+              <span class="empty-icon" aria-hidden="true">⌁</span>
+              <p>Start recording to see the live conversation here.</p>
+              <small>Audio is streamed only after Corti accepts the session configuration.</small>
+            </div>
+          </div>
 
-      <button id="end-consultation" disabled>
-        End consultation
-      </button>
-    </fieldset>
+          <div class="audio-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
-    <p id="status-message">Ready to begin.</p>
+          <footer class="recording-dock">
+            <span class="mic-indicator" id="mic-indicator" aria-hidden="true">●</span>
+            <div><strong id="recording-label">Ready to record</strong><small id="recording-detail">Microphone access is requested only when recording starts.</small></div>
+            <strong class="dock-timer" id="dock-timer">00:00:00</strong>
+            <button class="primary-button" id="start-consultation" type="button"><span aria-hidden="true">●</span> Start recording</button>
+            <button class="secondary-button" id="end-consultation" type="button" disabled><span aria-hidden="true">Ⅱ</span> End recording</button>
+          </footer>
+        </section>
 
-    <section>
-      <h2>Live transcript</h2>
-      <div id="transcript-output">
-        <p>No transcript available.</p>
-      </div>
-    </section>
+        <section class="note-card" aria-labelledby="note-title">
+          <header class="note-tabs">
+            <button class="note-tab active" type="button" aria-pressed="true">Note</button>
+            <button class="note-tab" type="button" aria-pressed="false">Summary</button>
+            <button class="note-tab" type="button" aria-pressed="false">Action items</button>
+            <button class="template-button" type="button" aria-label="Choose template; this workflow is planned">Use template <span aria-hidden="true">⌄</span></button>
+          </header>
 
-    <section>
-      <h2>Facts received</h2>
-      <div id="facts-output">
-        <p>No facts available.</p>
-      </div>
-    </section>
+          <div class="note-scroll">
+            <section class="document-intro">
+              <span class="document-icon" aria-hidden="true">▤</span>
+              <div><h2 id="note-title">Consultation document</h2><p>Generated from the facts below.</p></div>
+              <button class="outline-button" id="generate-document" type="button">✦ Generate</button>
+            </section>
 
-    <p>
-      <a href="./facts.html">Review facts</a>
-    </p>
-  </main>
+            <section class="facts-section" aria-labelledby="facts-title">
+              <header class="section-heading"><div><h3 id="facts-title">Clinical facts</h3><p>Edit a fact before generating the document.</p></div><button class="text-button" id="add-fact" type="button">＋ Add fact</button></header>
+              <div id="facts-editor" class="facts-editor"></div>
+              <p class="empty-facts" id="facts-empty">No facts yet. Extracted facts will appear during a recording.</p>
+            </section>
 
-  <script src="./shared.js"></script>
-  <script src="./dist/client.js"></script>
+            <section class="document-section" aria-labelledby="document-title">
+              <header class="section-heading"><div><h3 id="document-title">Generated note</h3><p id="document-subtitle">Generate a document when the consultation is complete.</p></div></header>
+              <div id="document-output" class="document-output" aria-live="polite">
+                <div class="document-placeholder"><span aria-hidden="true">✦</span><p>Your generated clinical note will appear here.</p></div>
+              </div>
+            </section>
+          </div>
 
-  <script>
-    var session = null;
+          <footer class="note-actions">
+            <button class="secondary-button" id="copy-document" type="button" disabled>▣ Copy</button>
+            <button class="secondary-button" id="download-document" type="button" disabled>⇩ Download</button>
+            <button class="save-button" type="button" disabled title="Saving to a patient record is outside this prototype">Save to patient record <span aria-hidden="true">→</span></button>
+          </footer>
+        </section>
+      </main>
+    </div>
 
-    var startButton = document.getElementById("start-consultation");
-    var endButton = document.getElementById("end-consultation");
-    var statusMessage = document.getElementById("status-message");
-    var transcriptOutput = document.getElementById("transcript-output");
-    var factsOutput = document.getElementById("facts-output");
-
-    function displayValue(container, value) {
-      var output = document.createElement("pre");
-
-      if (typeof value === "string") {
-        output.textContent = value;
-      } else {
-        output.textContent = JSON.stringify(value, null, 2);
-      }
-
-      container.appendChild(output);
-    }
-
-    function displaySavedInformation() {
-      var transcripts = PrototypeStore.getTranscripts();
-      var facts = PrototypeStore.getFacts();
-
-      if (transcripts.length > 0) {
-        transcriptOutput.replaceChildren();
-
-        transcripts.forEach(function (transcript) {
-          displayValue(transcriptOutput, transcript);
-        });
-      }
-
-      if (facts.length > 0) {
-        factsOutput.replaceChildren();
-
-        facts.forEach(function (fact) {
-          displayValue(factsOutput, fact);
-        });
-      }
-    }
-
-    function handleTranscript(message) {
-      PrototypeStore.addTranscript(message);
-
-      if (transcriptOutput.querySelector("p")) {
-        transcriptOutput.replaceChildren();
-      }
-
-      displayValue(transcriptOutput, message);
-    }
-
-    function handleFact(message) {
-      PrototypeStore.addFact(message);
-
-      if (factsOutput.querySelector("p")) {
-        factsOutput.replaceChildren();
-      }
-
-      displayValue(factsOutput, message);
-    }
-
-    startButton.addEventListener("click", async function () {
-      startButton.disabled = true;
-      statusMessage.textContent = "Starting consultation…";
-
-      try {
-        /*
-         * Starting a new consultation removes information from the
-         * previous prototype consultation.
-         */
-        PrototypeStore.clearConsultation();
-
-        transcriptOutput.innerHTML = "<p>No transcript available.</p>";
-        factsOutput.innerHTML = "<p>No facts available.</p>";
-
-        var response = await fetch("/api/start-session", {
-          method: "POST"
-        });
-
-        var data = await response.json();
-
-        if (!response.ok || data.error) {
-          throw new Error(data.error || "Could not start the session.");
-        }
-
-        PrototypeStore.setInteractionId(data.interactionId);
-
-        session = await AmbientScribe.startSession({
-          accessToken: data.accessToken,
-          interactionId: data.interactionId,
-          tenantName: data.tenantName,
-          environment: data.environment,
-          mode: "single",
-          onTranscript: handleTranscript,
-          onFact: handleFact
-        });
-
-        endButton.disabled = false;
-        statusMessage.textContent = "Consultation running.";
-      } catch (error) {
-        console.error(error);
-
-        startButton.disabled = false;
-        statusMessage.textContent =
-          error.message || "Could not start the consultation.";
-      }
-    });
-
-    endButton.addEventListener("click", async function () {
-      endButton.disabled = true;
-      statusMessage.textContent = "Ending consultation…";
-
-      try {
-        if (session) {
-          await session.endConsultation();
-          session = null;
-        }
-
-        statusMessage.textContent =
-          "Consultation ended. You can now review the facts.";
-
-        startButton.disabled = false;
-      } catch (error) {
-        console.error(error);
-
-        statusMessage.textContent =
-          error.message || "Could not end the consultation.";
-
-        endButton.disabled = false;
-      }
-    });
-
-    displaySavedInformation();
-  </script>
-</body>
+    <script src="./shared.js"></script>
+    <script src="./dist/client.js"></script>
+    <script src="./app.js"></script>
+  </body>
 </html>

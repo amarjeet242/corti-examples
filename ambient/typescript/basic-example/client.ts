@@ -119,11 +119,12 @@ export async function startSession(
   } as Corti.StreamConfig;
 
   // -- 3. Connect to the Corti streaming WebSocket -------------------------
+  // The SDK resolves only after Corti accepts the configuration. This keeps
+  // microphone audio from being sent before the session is ready.
   const streamSocket = await client.stream.connect({
-  id: interactionId,
-  configuration,
-  awaitConfiguration: false,
-});
+    id: interactionId,
+    configuration,
+  });
 
   // -- 4. Acquire audio depending on mode ----------------------------------
   //    "single"  → just the local microphone
@@ -185,7 +186,7 @@ export async function startSession(
   const mediaRecorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined);
   console.log(`[${mode}] MediaRecorder using mimeType: ${mediaRecorder.mimeType || 'browser default'}`);
 
-  let configAccepted = false;
+  let configAccepted = true;
   let mediaRecorderStarted = false;
   let isEnding = false;
   let endedResolver: (() => void) | null = null;
@@ -200,18 +201,6 @@ export async function startSession(
 
   // -- 6. Handle incoming events -------------------------------------------
   streamSocket.on("message", (message) => {
-    // Wait for CONFIG_ACCEPTED before starting MediaRecorder
-    if (message.type === "CONFIG_ACCEPTED") {
-      configAccepted = true;
-      console.log(`[${mode}] Configuration accepted, starting MediaRecorder`);
-      if (!mediaRecorderStarted) {
-        mediaRecorderStarted = true;
-        mediaRecorder.start(250);
-        console.log(`[${mode}] MediaRecorder started — streaming audio to Corti`);
-      }
-      return;
-    }
-
     switch (message.type) {
       case "transcript":
         console.log("Transcript:", message);
@@ -236,6 +225,12 @@ export async function startSession(
         break;
     }
   });
+
+  // connect() above has completed the CONFIG_ACCEPTED handshake, so audio can
+  // start immediately after the message handler has been registered.
+  mediaRecorderStarted = true;
+  mediaRecorder.start(250);
+  console.log(`[${mode}] MediaRecorder started — streaming audio to Corti`);
 
   // -- 7. Return cleanup function ------------------------------------------
   let endedPromise: Promise<void> | null = null;

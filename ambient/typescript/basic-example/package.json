@@ -9,7 +9,7 @@
     "dev": "npm run build:client && tsx server.ts",
     "start": "node dist/server.js",
     "build": "npm run build:client && tsc",
-    "clean": "rm -rf dist"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "keywords": [
     "corti",

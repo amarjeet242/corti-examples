@@ -1,237 +1,71 @@
-# Corti AI Platform – Live Transcription & Fact-Based Documentation
+# Ambient Scribe — single-workspace prototype
 
-A single demo app using the [`@corti/sdk`](https://www.npmjs.com/package/@corti/sdk) for **live audio transcription**, **fact extraction**, and **clinical document generation**. Toggle between two modes from the UI:
+This local Corti ambient-consultation prototype combines recording, live transcription, fact review/editing, and document generation in one responsive workspace.
 
-- **Single Microphone** – one audio source with automatic speaker diarization.
-- **Virtual Consultation** – local microphone (doctor) + remote audio (patient) merged into a multi-channel stream. The remote audio can come from either a **WebRTC peer connection** or **screen/tab capture** (`getDisplayMedia`).
+It is a prototype only. Do not use it for real patient care or enter patient-identifiable information without completing your organisation's privacy, security, clinical-safety, and data-governance review.
 
-After a consultation ends, generate a structured clinical document from the extracted facts with a single click.
+## What works
 
-The demo is split into **server** (auth, interaction management, document generation) and **client** (audio capture, streaming, event display, document creation).
+- Start and end a single-microphone Corti Stream session.
+- Display live transcript events and extracted facts.
+- Review, add, remove, and edit local facts before document generation.
+- Generate a document from the reviewed facts.
+- Copy or download the resulting local note.
 
----
+The Template and Settings controls are visual placeholders. Saving to a patient record is intentionally disabled.
 
-## Quick Start
+## Run locally
 
-**Prerequisites:** Node.js 18+
+Requires Node.js 18+ and Corti credentials with access to the Stream, Facts, and Documents APIs.
 
-**Setup (3 steps):**
-
-```bash
-cp .env.example .env
-# Edit .env with your Corti credentials (CORTI_TENANT_NAME, CORTI_CLIENT_ID, CORTI_CLIENT_SECRET)
-
+```powershell
+Copy-Item .env.example .env
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser. Transcript and fact events appear in the browser console.
+Set these values in `.env` (which is ignored by Git):
 
----
-
-## Installation (Manual)
-
-If setting up without npm:
-
-```bash
-npm i @corti/sdk express
-npm i -D typescript ts-node @types/express @types/node
+```dotenv
+CORTI_TENANT_NAME=your_tenant_name
+CORTI_CLIENT_ID=your_client_id
+CORTI_CLIENT_SECRET=your_client_secret
+CORTI_ENVIRONMENT=eu
+PORT=3000
 ```
 
----
+Visit `http://localhost:3000`. If credentials are absent, the interface still loads, while recording and document generation return a safe configuration error.
 
-## File Structure
+## Security model
 
-```
-ambient/typescript/basic-example/
-  server.ts      # Server-side: OAuth2 auth, interaction creation, scoped token, document generation
-  client.ts      # Client-side: stream connection, audio capture, event handling, document creation
-  audio.ts       # Audio utilities: getMicrophoneStream(), getRemoteParticipantStream(), getDisplayMediaStream(), mergeMediaStreams()
-  index.html     # Minimal UI with mode toggle, consultation controls, and document output
-  README.md
-```
+- Client credentials and the full-scope `CortiClient` remain on the server.
+- `/api/start-session` returns only a token scoped to `streams` for browser WebSocket use.
+- The server validates interaction IDs, limits JSON request bodies to 64 KB, bounds submitted facts, and returns generic failures rather than provider error details.
+- The app sets a restrictive CSP, disables `X-Powered-By`, prevents framing, limits browser permissions to the local microphone, and omits referrers.
+- Prototype transcript, fact, and document drafts use `sessionStorage` only. They clear when the tab closes and when a new consultation starts.
 
----
+For production, add authenticated users, tenant-aware authorization, clinical audit logging, rate limiting, TLS, retention controls, consent/recording indicators, and a server-side Corti proxy where appropriate. Corti's [JavaScript proxy guide](https://docs.corti.ai/sdk/js/proxy) and [security guidance](https://docs.corti.ai/authentication/security_best_practices) describe the backend-owned credential model.
 
-## Server (`server.ts`)
+## File map
 
-Runs on your backend. Responsible for:
-
-1. **Creating a `CortiClient`** with OAuth2 client credentials (never exposed to the browser).
-2. **Creating an interaction** via the REST API.
-3. **Minting a scoped stream token** (only grants WebSocket streaming access).
-4. **Generating a clinical document** from the facts collected during a consultation.
-
-```ts
-import { CortiClient, CortiAuth, CortiEnvironment } from "@corti/sdk";
-
-// Full-privilege client — server-side only
-const client = new CortiClient({
-  environment: CortiEnvironment.Eu,
-  tenantName: "YOUR_TENANT_NAME",
-  auth: { clientId: "YOUR_CLIENT_ID", clientSecret: "YOUR_CLIENT_SECRET" },
-});
-
-// Create an interaction
-const interaction = await client.interactions.create({
-  encounter: { identifier: randomUUID(), status: "planned", type: "first_consultation" },
-});
-
-// Mint a token scoped to streaming only
-const auth = new CortiAuth({ environment: CortiEnvironment.Eu, tenantName: "YOUR_TENANT_NAME" });
-const streamToken = await auth.getToken({
-  clientId: "YOUR_CLIENT_ID",
-  clientSecret: "YOUR_CLIENT_SECRET",
-  scopes: ["streams"],
-});
-
-// Send interaction.id + streamToken.accessToken to the client
+```text
+index.html         Single-page structure
+app.css            Responsive visual system
+app.js             UI state, local fact editing, document controls
+client.ts          Corti Stream WebSocket and microphone lifecycle
+audio.ts           Audio capture utilities
+server.ts          Credential boundary, API routes, document generation
+shared.js          Tab-scoped draft store
+docs/CHANGELOG.md  Change and troubleshooting log
 ```
 
-### Document Generation
+`facts.html` and `document.html` are compatibility redirects to `index.html`; they may be removed once old bookmarks are retired.
 
-After a consultation ends, the server fetches the extracted facts and generates a structured clinical document:
+## Build
 
-```ts
-// 1. Fetch facts collected during the consultation
-const facts = await client.facts.list(interactionId);
-
-// 2. Create a document from the facts
-const document = await client.documents.classic.create(interactionId, {
-  context: [
-    {
-      type: "facts",
-      data: facts.map((fact) => ({
-        text: fact.text,
-        group: fact.group,
-        source: fact.source,
-      })),
-    },
-  ],
-  template: {
-    sections: [
-      { key: "corti-hpi" },
-      { key: "corti-allergies" },
-      { key: "corti-social-history" },
-      { key: "corti-plan" },
-    ],
-  },
-  outputLanguage: "en",
-  name: "Consultation Document",
-  documentationMode: "routed_parallel",
-});
+```powershell
+npm run build
+npm start
 ```
 
----
-
-## Audio Utilities (`audio.ts`)
-
-Three methods for obtaining audio streams, plus a merge utility:
-
-```ts
-// 1. Local microphone
-const micStream = await getMicrophoneStream();
-
-// 2a. Remote participant from a WebRTC peer connection
-const remoteStream = getRemoteParticipantStream(peerConnection);
-
-// 2b. OR: screen / tab capture (alternative when you don't control the peer connection,
-//     e.g. the video-call app runs in another browser tab)
-const remoteStream = await getDisplayMediaStream();
-
-// 3. Merge into a single multi-channel stream (virtual consultation mode)
-const { stream, endStream } = mergeMediaStreams([micStream, remoteStream]);
-```
-
----
-
-## Client (`client.ts`)
-
-Receives the scoped token + interaction ID from the server, then:
-
-1. Creates a `CortiClient` with the stream-scoped token.
-2. Connects via `client.stream.connect()`.
-3. Acquires audio — just the mic in single mode, or mic + remote merged in virtual mode.
-4. Streams audio in 200 ms chunks via `MediaRecorder`.
-5. Logs transcript and fact events to the console.
-
-```ts
-const client = new CortiClient({
-  environment: CortiEnvironment.Eu,
-  tenantName: "YOUR_TENANT_NAME",
-  auth: { accessToken },  // stream scope only
-});
-
-const streamSocket = await client.stream.connect({ id: interactionId });
-
-// With a stream-scoped token, only streaming works:
-// await client.interactions.list();  // Error — outside scope
-// await client.transcribe.connect(); // Error — outside scope
-```
-
-### Single Microphone Mode
-
-```ts
-const microphoneStream = await getMicrophoneStream();
-const mediaRecorder = new MediaRecorder(microphoneStream);
-mediaRecorder.ondataavailable = (e) => streamSocket.send(e.data);
-mediaRecorder.start(200);
-```
-
-### Virtual Consultation Mode
-
-The remote audio source is selected from the UI — either a WebRTC peer connection or screen/tab capture:
-
-```ts
-const microphoneStream = await getMicrophoneStream();
-
-// Option A: WebRTC
-const remoteStream = getRemoteParticipantStream(peerConnection);
-
-// Option B: Screen / tab capture (getDisplayMedia)
-const remoteStream = await getDisplayMediaStream();
-
-// channel 0 = doctor, channel 1 = patient
-const { stream, endStream } = mergeMediaStreams([microphoneStream, remoteStream]);
-
-const mediaRecorder = new MediaRecorder(stream);
-mediaRecorder.ondataavailable = (e) => streamSocket.send(e.data);
-mediaRecorder.start(200);
-```
-
-### Event Handling
-
-```ts
-streamSocket.on("transcript", (data) => console.log("Transcript:", data));
-streamSocket.on("fact", (data) => console.log("Fact:", data));
-```
-
----
-
-## UI (`index.html`)
-
-A minimal page with:
-
-- Radio buttons to toggle between **Single Microphone** and **Virtual Consultation** mode.
-- When **Virtual Consultation** is selected, a second radio group appears to choose between **WebRTC** and **Screen / tab capture** as the remote audio source.
-- **Start Consultation** / **End Consultation** buttons to control the streaming session.
-- **Create Document** button — enabled after a consultation ends. Calls the server to fetch facts and generate a clinical document, then displays the result on the page.
-- Transcript and fact events are logged to the browser console.
-
----
-
-## Production Build
-
-For production deployment, compile and run the server:
-
-```bash
-npm run build      # Compile TypeScript to dist/
-npm start          # Run compiled server
-```
-
----
-
-## Resources
-
-- [`@corti/sdk` on npm](https://www.npmjs.com/package/@corti/sdk)
-- [Corti API documentation](https://docs.corti.ai)
+See [docs/CHANGELOG.md](docs/CHANGELOG.md) for implementation decisions and troubleshooting notes.

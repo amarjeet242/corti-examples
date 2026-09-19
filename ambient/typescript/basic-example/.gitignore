@@ -1,0 +1,10 @@
+# Environment-specific secrets
+.env
+.env.*
+!.env.example
+
+# Reproducible local/build output
+node_modules/
+dist/
+*.log
+coverage/
