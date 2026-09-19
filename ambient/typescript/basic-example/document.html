@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AmbientScribe Document</title>
+</head>
+
+<body>
+  <header>
+    <strong>AmbientScribe</strong>
+
+    <nav>
+      <a href="./index.html">Consultation</a>
+      |
+      <a href="./facts.html">Facts</a>
+      |
+      <a href="./document.html">Document</a>
+    </nav>
+  </header>
+
+  <hr />
+
+  <main>
+    <h1>Clinical document</h1>
+
+    <p>
+      Generate a document from the facts collected during the consultation.
+    </p>
+
+    <button id="generate-document">
+      Generate document
+    </button>
+
+    <p id="status-message"></p>
+
+    <section>
+      <h2>Generated output</h2>
+
+      <pre id="document-output">No document has been generated.</pre>
+    </section>
+
+    <p>
+      <a href="./facts.html">Return to facts</a>
+    </p>
+  </main>
+
+  <script src="./shared.js"></script>
+  <script src="./document-page.js"></script>
+</body>
+</html>
